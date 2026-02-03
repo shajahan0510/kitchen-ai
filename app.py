@@ -147,7 +147,7 @@ def generate_recipe_groq(description, model_name):
 
 # --- UI ---
 
-st.title("🔍 Kitchen AI (Secure)")
+st.title("🔍 Kitchen AI ")
 st.markdown(f"**Vision:** Imagga | **Recipe:** {selected_recipe_model}")
 
 final_description = ""
@@ -192,3 +192,4 @@ if final_description:
             st.markdown(recipe)
         except Exception as e:
             st.error(f"Error: {e}")
+
