@@ -10,40 +10,54 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 # --- CONFIGURATION ---
-st.set_page_config(page_title="Kitchen AI (Imagga + Llama 3.3)", layout="wide")
+st.set_page_config(page_title="Kitchen AI", layout="wide")
+
+# --- HELPER FUNCTION FOR KEYS ---
+def get_key(secret_name, label, help_text):
+    """
+    Checks if a secret exists in Streamlit Secrets.
+    If yes, uses it and shows a success checkmark.
+    If no, shows a password input box.
+    """
+    if secret_name in st.secrets:
+        # Key is loaded from Secrets (Cloud or Local)
+        st.success(f"{label}: ✅ Connected")
+        return st.secrets[secret_name]
+    else:
+        # Key is missing, ask user to input it
+        return st.text_input(label, type="password", help=help_text)
 
 with st.sidebar:
     st.header("🔑 Configuration")
+    st.caption("API Keys loaded from Secrets or Input Box")
     
     st.markdown("### Vision Provider (Imagga)")
-    st.info("Using **Imagga** (Tagging API)")
-    imagga_key = st.text_input("Imagga API Key", type="password", help="Get it at imagga.com/dashboard")
-    imagga_secret = st.text_input("Imagga API Secret", type="password", help="Get it at imagga.com/dashboard")
+    imagga_key = get_key("IMAGGA_KEY", "Imagga API Key", "Get it at imagga.com/dashboard")
+    imagga_secret = get_key("IMAGGA_SECRET", "Imagga API Secret", "Get it at imagga.com/dashboard")
     
     st.markdown("---")
     st.markdown("### Recipe Provider (Groq)")
-    st.info("Using **Llama 3.3** (Latest)")
-    groq_key = st.text_input("Groq API Key", type="password", help="Get it at console.groq.com")
+    groq_key = get_key("GROQ_KEY", "Groq API Key", "Get it at console.groq.com")
     
-    # --- NEW: Recipe Model Selector ---
+    # --- Model Selector ---
     with st.expander("⚙️ Recipe Model Settings"):
         recipe_models = [
-            "llama-3.3-70b-versatile", # NEW Replacement (Recommended)
-            "llama-3.1-8b-instant",   # Faster/Smaller Backup
+            "llama-3.3-70b-versatile", # Recommended
+            "llama-3.1-8b-instant",   # Faster/Smaller
             "gemma2-9b-it"            # Alternative
         ]
         selected_recipe_model = st.selectbox(
             "Select Recipe Model:",
             options=recipe_models,
             index=0,
-            help="Llama 3.3 is the new replacement for 3.1 70b."
         )
 
+# Stop if keys are missing
 if not imagga_key or not imagga_secret or not groq_key:
     st.warning("⚠️ Please enter Imagga Key, Secret, AND Groq Key.")
     st.stop()
 
-# --- FIX: Strip whitespace from keys ---
+# Strip whitespace just in case keys were pasted manually
 imagga_key = imagga_key.strip()
 imagga_secret = imagga_secret.strip()
 groq_key = groq_key.strip()
@@ -61,9 +75,7 @@ COOKBOOK_CONTEXT = """
 # --- FUNCTIONS ---
 
 def analyze_image_imagga(image_bytes):
-    """
-    Uses Imagga API to detect tags/ingredients in the image.
-    """
+    """Uses Imagga API to detect tags/ingredients in the image."""
     try:
         # --- STEP 1: Convert Image to Base64 ---
         img = Image.open(BytesIO(image_bytes))
@@ -135,7 +147,7 @@ def generate_recipe_groq(description, model_name):
 
 # --- UI ---
 
-st.title("🔍 Kitchen AI (Imagga + Llama 3.3)")
+st.title("🔍 Kitchen AI (Secure)")
 st.markdown(f"**Vision:** Imagga | **Recipe:** {selected_recipe_model}")
 
 final_description = ""
